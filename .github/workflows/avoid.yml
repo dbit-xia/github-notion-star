@@ -1,0 +1,32 @@
+name: 'Avoid workflow being suspended'
+  
+on:
+  workflow_dispatch:
+  schedule:
+    # https://crontab.guru/#0_0_1_*/2_*
+    - cron: '0 0 1 */2 *'
+
+jobs:
+  auto_renew:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout codes'
+        uses: actions/checkout@v4
+      
+      - name: 'Avoid Github Workflow being suspended'
+        run: echo $(cat /proc/sys/kernel/random/uuid) > ${{ github.workspace }}/UUID.txt
+      
+      - name: 'Commit & Push Files'
+        id: commit
+        run: |
+          mkdir -p ${{ github.workspace }}/upload/
+          cp ${{ github.workspace }}/UUID.txt ${{ github.workspace }}/upload/
+          cd ${{ github.workspace }}/upload/
+          git init
+          git config --local user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+          git config --local user.name "holazt"
+          git checkout -b UUID
+          git add .
+          git commit -m "avoid being suspended"
+          git remote add origin "https://${{ github.actor }}:${{ github.token }}@github.com/${{ github.repository }}"
+          git push -f origin UUID
